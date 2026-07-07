@@ -42,8 +42,8 @@
   </div>
 
   <div class="grid md:grid-cols-2 gap-4 mt-8">
-    <div class="stripe rounded-2xl aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">고장 전 사진</div>
-    <div class="stripe-after rounded-2xl aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">수리 후 사진</div>
+    <div id="beforeBox" class="stripe rounded-2xl aspect-[4/3] flex items-center justify-center text-gray-400 text-sm overflow-hidden">고장 전 사진</div>
+    <div id="afterBox" class="stripe-after rounded-2xl aspect-[4/3] flex items-center justify-center text-gray-400 text-sm overflow-hidden">수리 후 사진</div>
   </div>
 
   <div class="bg-white rounded-2xl border border-gray-100 p-6 mt-8">
@@ -54,22 +54,33 @@
 
 <footer class="text-center text-xs text-gray-400 pb-10">© 2026 M&H Coffee Repair. All rights reserved. · <a href="admin.html" class="hover:text-gray-500">관리자</a></footer>
 
-<script>
-  const cases = {
-    1: { title: '펌프 소음 및 압력 저하 수리', tag: '가정용 전자동 머신', meta: '2026.06.02 · 방문진단 1일 · 수리 1일',
-      desc: '보일러 펌프에서 소음이 발생하고 추출 압력이 저하되는 증상으로 접수되었습니다. 펌프 진동 흡수 패드 노후화 및 스케일 축적이 원인으로 확인되어 펌프 교체 및 내부 스케일 제거 작업을 진행했습니다.' },
-    2: { title: '그룹헤드 누수 수리', tag: '상업용 그룹헤드 머신', meta: '2026.05.20 · 방문진단 1일 · 수리 1일',
-      desc: '추출 시 그룹헤드 개스킷 부위에서 누수가 발생하는 증상으로 접수되었습니다. 개스킷 및 샤워스크린 교체 후 정상 작동 확인했습니다.' },
-    3: { title: '캡슐 인식 오류 수리', tag: '캡슐 커피머신', meta: '2026.05.11 · 방문진단 1일 · 수리 1일',
-      desc: '캡슐을 인식하지 못하고 에러 코드가 표시되는 증상으로 접수되었습니다. 센서 오염 및 배선 접촉 불량이 원인으로 확인되어 센서 세척 및 배선 재정비를 진행했습니다.' },
-  };
+<script type="module">
+  import { db } from "./firebase-config.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const id = new URLSearchParams(location.search).get('id') || 1;
-  const c = cases[id] || cases[1];
-  document.getElementById('tag').textContent = c.tag;
-  document.getElementById('title').textContent = c.title;
-  document.getElementById('meta').textContent = c.meta;
-  document.getElementById('desc').textContent = c.desc;
+  const categoryLabel = { home: '가정용 전자동 머신', commercial: '상업용 그룹헤드 머신', capsule: '캡슐 커피머신' };
+
+  const id = new URLSearchParams(location.search).get('id');
+
+  async function load() {
+    if (!id) return;
+    const snap = await getDoc(doc(db, "cases", id));
+    if (!snap.exists()) {
+      document.getElementById('title').textContent = '사례를 찾을 수 없습니다.';
+      return;
+    }
+    const c = snap.data();
+    const date = c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('ko-KR') : '';
+
+    document.getElementById('tag').textContent = categoryLabel[c.category] || c.category;
+    document.getElementById('title').textContent = c.title;
+    document.getElementById('meta').textContent = date;
+    document.getElementById('desc').textContent = c.description;
+
+    if (c.beforeURL) document.getElementById('beforeBox').innerHTML = `<img src="${c.beforeURL}" class="w-full h-full object-cover">`;
+    if (c.afterURL) document.getElementById('afterBox').innerHTML = `<img src="${c.afterURL}" class="w-full h-full object-cover">`;
+  }
+  load();
 </script>
 </body>
 </html>

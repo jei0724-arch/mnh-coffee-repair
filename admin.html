@@ -8,6 +8,8 @@
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
   .tab.active { background:#1b3d37; color:#fff; }
+  .spinner { border: 3px solid #e5e7eb; border-top-color: #fff; border-radius: 50%; width: 16px; height: 16px; display:inline-block; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body class="bg-[#f7f4ee] text-gray-800">
@@ -49,6 +51,7 @@
   <div class="flex flex-wrap gap-2 mb-6">
     <button data-view="repairs" class="viewTab tab active text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">접수 리스트</button>
     <button data-view="inquiries" class="viewTab tab text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">문의 리스트</button>
+    <button data-view="cases" class="viewTab tab text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">수리 사례 관리</button>
   </div>
 
   <!-- 접수 리스트 -->
@@ -102,12 +105,64 @@
     </div>
     <p id="inquiryEmptyMsg" class="text-center text-gray-400 text-sm py-10 hidden">문의 내역이 없습니다.</p>
   </section>
+
+  <!-- 수리 사례 관리 -->
+  <section id="casesView" class="hidden">
+    <h1 class="text-lg font-bold mb-6">수리 사례 등록</h1>
+
+    <form id="caseForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5 mb-10">
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-bold mb-1.5">제목 <span class="text-red-500">*</span></label>
+          <input type="text" name="title" required placeholder="예: 펌프 소음 및 압력 저하 수리"
+            class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1.5">카테고리 <span class="text-red-500">*</span></label>
+          <select name="category" required class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+            <option value="home">가정용 전자동 머신</option>
+            <option value="commercial">상업용 그룹헤드 머신</option>
+            <option value="capsule">캡슐 커피머신</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold mb-1.5">수리 내용 <span class="text-red-500">*</span></label>
+        <textarea name="description" required rows="4" placeholder="증상과 수리 내용을 적어주세요"
+          class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37] resize-none"></textarea>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-bold mb-1.5">고장 전 사진</label>
+          <input type="file" name="beforePhoto" accept="image/*"
+            class="w-full text-sm border border-dashed border-gray-300 rounded-lg px-3.5 py-2.5 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-[#eef3f1] file:text-[#1b3d37] file:text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1.5">수리 후 사진</label>
+          <input type="file" name="afterPhoto" accept="image/*"
+            class="w-full text-sm border border-dashed border-gray-300 rounded-lg px-3.5 py-2.5 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-[#eef3f1] file:text-[#1b3d37] file:text-sm">
+        </div>
+      </div>
+
+      <button type="submit" id="caseSubmitBtn" class="bg-[#1b3d37] hover:bg-[#16302b] text-white font-semibold px-6 py-3 rounded-full text-sm">
+        <span id="caseSubmitText">사례 등록</span>
+      </button>
+      <p id="caseError" class="text-red-500 text-sm hidden"></p>
+    </form>
+
+    <h2 class="text-lg font-bold mb-4">등록된 사례</h2>
+    <div id="caseList" class="grid md:grid-cols-3 gap-5"></div>
+    <p id="caseEmptyMsg" class="text-center text-gray-400 text-sm py-10 hidden">등록된 사례가 없습니다.</p>
+  </section>
 </main>
 
 <script type="module">
-  import { db, auth } from "./firebase-config.js";
-  import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { db, auth, storage } from "./firebase-config.js";
+  import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const loginView = document.getElementById('loginView');
   const dashboardView = document.getElementById('dashboardView');
@@ -120,9 +175,16 @@
   const emptyMsg = document.getElementById('emptyMsg');
   const inquiryTableBody = document.getElementById('inquiryTableBody');
   const inquiryEmptyMsg = document.getElementById('inquiryEmptyMsg');
+  const caseForm = document.getElementById('caseForm');
+  const caseSubmitBtn = document.getElementById('caseSubmitBtn');
+  const caseSubmitText = document.getElementById('caseSubmitText');
+  const caseError = document.getElementById('caseError');
+  const caseList = document.getElementById('caseList');
+  const caseEmptyMsg = document.getElementById('caseEmptyMsg');
 
   let allRepairs = [];
   let allInquiries = [];
+  let allCases = [];
 
   // 뷰 탭 전환
   document.querySelectorAll('.viewTab').forEach(tab => {
@@ -131,6 +193,7 @@
       tab.classList.add('active');
       document.getElementById('repairsView').classList.toggle('hidden', tab.dataset.view !== 'repairs');
       document.getElementById('inquiriesView').classList.toggle('hidden', tab.dataset.view !== 'inquiries');
+      document.getElementById('casesView').classList.toggle('hidden', tab.dataset.view !== 'cases');
     });
   });
 
@@ -154,6 +217,7 @@
       logoutBtn.classList.remove('hidden');
       subscribeRepairs();
       subscribeInquiries();
+      subscribeCases();
     } else {
       loginView.classList.remove('hidden');
       dashboardView.classList.add('hidden');
@@ -233,6 +297,84 @@
   }
 
   statusFilter.addEventListener('change', renderRepairs);
+
+  // ── 수리 사례 관리 ──
+  const categoryLabel = { home: '가정용 전자동 머신', commercial: '상업용 그룹헤드 머신', capsule: '캡슐 커피머신' };
+
+  function subscribeCases() {
+    const q = query(collection(db, "cases"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snap) => {
+      allCases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderCases();
+    });
+  }
+
+  function renderCases() {
+    caseEmptyMsg.classList.toggle('hidden', allCases.length > 0);
+    caseList.innerHTML = allCases.map(c => `
+      <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div class="grid grid-cols-2">
+          ${c.beforeURL ? `<img src="${c.beforeURL}" class="w-full h-28 object-cover">` : `<div class="w-full h-28 bg-gray-100 flex items-center justify-center text-xs text-gray-400">고장 전</div>`}
+          ${c.afterURL ? `<img src="${c.afterURL}" class="w-full h-28 object-cover">` : `<div class="w-full h-28 bg-gray-100 flex items-center justify-center text-xs text-gray-400">수리 후</div>`}
+        </div>
+        <div class="p-4">
+          <span class="text-xs text-gray-400">${categoryLabel[c.category] || c.category}</span>
+          <h3 class="font-bold text-sm mt-1">${c.title}</h3>
+          <button data-id="${c.id}" class="deleteCaseBtn text-xs text-red-500 hover:underline mt-3">삭제</button>
+        </div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.deleteCaseBtn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('이 사례를 삭제할까요?')) return;
+        await deleteDoc(doc(db, "cases", btn.dataset.id));
+      });
+    });
+  }
+
+  caseForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    caseError.classList.add('hidden');
+    caseSubmitBtn.disabled = true;
+    caseSubmitText.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const data = Object.fromEntries(new FormData(caseForm).entries());
+      const beforeFile = caseForm.beforePhoto.files[0];
+      const afterFile = caseForm.afterPhoto.files[0];
+
+      let beforeURL = '', afterURL = '';
+      if (beforeFile) {
+        const r = ref(storage, `cases/${Date.now()}_before_${beforeFile.name}`);
+        await uploadBytes(r, beforeFile);
+        beforeURL = await getDownloadURL(r);
+      }
+      if (afterFile) {
+        const r = ref(storage, `cases/${Date.now()}_after_${afterFile.name}`);
+        await uploadBytes(r, afterFile);
+        afterURL = await getDownloadURL(r);
+      }
+
+      await addDoc(collection(db, "cases"), {
+        title: data.title,
+        category: data.category,
+        description: data.description,
+        beforeURL,
+        afterURL,
+        createdAt: serverTimestamp()
+      });
+
+      caseForm.reset();
+    } catch (err) {
+      console.error(err);
+      caseError.textContent = '등록 중 오류가 발생했습니다. (' + err.message + ')';
+      caseError.classList.remove('hidden');
+    } finally {
+      caseSubmitBtn.disabled = false;
+      caseSubmitText.textContent = '사례 등록';
+    }
+  });
 </script>
 </body>
 </html>

@@ -48,28 +48,37 @@
 
 <footer class="text-center text-xs text-gray-400 pb-10">© 2026 M&H Coffee Repair. All rights reserved. · <a href="admin.html" class="hover:text-gray-500">관리자</a></footer>
 
-<script>
-  const cases = [
-    { id: 1, cat: 'home', title: '펌프 소음 및 압력 저하 수리', date: '2026.06.02', tag: '가정용 전자동 머신' },
-    { id: 2, cat: 'commercial', title: '그룹헤드 누수 수리', date: '2026.05.20', tag: '상업용 그룹헤드 머신' },
-    { id: 3, cat: 'capsule', title: '캡슐 인식 오류 수리', date: '2026.05.11', tag: '캡슐 커피머신' },
-  ];
+<script type="module">
+  import { db } from "./firebase-config.js";
+  import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const categoryLabel = { home: '가정용 전자동 머신', commercial: '상업용 그룹헤드 머신', capsule: '캡슐 커피머신' };
 
   const cardsEl = document.getElementById('cards');
   const tabs = document.querySelectorAll('.tab');
+  let allCases = [];
 
   function render(cat) {
-    const list = cat === 'all' ? cases : cases.filter(c => c.cat === cat);
-    cardsEl.innerHTML = list.map(c => `
+    const list = cat === 'all' ? allCases : allCases.filter(c => c.category === cat);
+    if (!list.length) {
+      cardsEl.innerHTML = `<p class="text-gray-400 text-sm col-span-3 text-center py-10">등록된 수리 사례가 없습니다.</p>`;
+      return;
+    }
+    cardsEl.innerHTML = list.map(c => {
+      const date = c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('ko-KR') : '';
+      const thumb = c.afterURL || c.beforeURL;
+      return `
       <a href="case-detail.html?id=${c.id}" class="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition">
-        <div class="stripe aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">Before / After 사진</div>
+        ${thumb
+          ? `<img src="${thumb}" class="aspect-[4/3] w-full object-cover">`
+          : `<div class="stripe aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">Before / After 사진</div>`}
         <div class="p-4">
-          <span class="text-xs text-gray-400">${c.tag}</span>
+          <span class="text-xs text-gray-400">${categoryLabel[c.category] || c.category}</span>
           <h3 class="font-bold mt-1">${c.title}</h3>
-          <span class="text-xs text-gray-400">${c.date}</span>
+          <span class="text-xs text-gray-400">${date}</span>
         </div>
-      </a>
-    `).join('');
+      </a>`;
+    }).join('');
   }
 
   tabs.forEach(tab => {
@@ -80,7 +89,13 @@
     });
   });
 
-  render('all');
+  async function load() {
+    const q = query(collection(db, "cases"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    allCases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    render('all');
+  }
+  load();
 </script>
 </body>
 </html>
