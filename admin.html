@@ -3,28 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>관리자 - M&H 커피머신 AS</title>
+<title>관리자 - M&H 엠엔에이치</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
+  .tab.active { background:#1b3d37; color:#fff; }
+</style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-[#f7f4ee] text-gray-800">
 
-<header class="bg-white border-b border-gray-100">
-  <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between">
-    <a href="index.html" class="text-xl font-bold text-blue-600">M&H <span class="text-gray-800 font-medium">관리자</span></a>
-    <button id="logoutBtn" class="text-sm text-gray-400 hover:text-gray-600 hidden">로그아웃</button>
+<header class="bg-[#1b3d37] text-white">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm">M&H</span>
+      <span class="leading-tight">
+        <span class="block font-bold">엠엔에이치 관리자</span>
+        <span class="block text-[11px] text-white/60">커피 머신 전문 수리</span>
+      </span>
+    </a>
+    <button id="logoutBtn" class="text-sm text-white/70 hover:text-white hidden">로그아웃</button>
   </div>
 </header>
 
 <!-- 로그인 화면 -->
-<div id="loginView" class="max-w-sm mx-auto mt-20 px-5">
+<div id="loginView" class="max-w-sm mx-auto mt-20 px-6">
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
     <h1 class="text-lg font-bold mb-6 text-center">관리자 로그인</h1>
     <form id="loginForm" class="space-y-3">
       <input type="email" id="email" required placeholder="이메일"
-        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
       <input type="password" id="password" required placeholder="비밀번호"
-        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm">로그인</button>
+        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+      <button type="submit" class="w-full bg-[#1b3d37] hover:bg-[#16302b] text-white font-semibold py-2.5 rounded-full text-sm">로그인</button>
       <p id="loginError" class="text-red-500 text-xs text-center hidden"></p>
     </form>
     <p class="text-xs text-gray-400 mt-4 text-center">
@@ -34,10 +44,17 @@
 </div>
 
 <!-- 대시보드 -->
-<main id="dashboardView" class="max-w-6xl mx-auto px-5 py-8 hidden">
-  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h1 class="text-lg font-bold">접수 리스트</h1>
-    <div class="flex gap-2">
+<main id="dashboardView" class="max-w-6xl mx-auto px-6 py-8 hidden">
+
+  <div class="flex flex-wrap gap-2 mb-6">
+    <button data-view="repairs" class="viewTab tab active text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">접수 리스트</button>
+    <button data-view="inquiries" class="viewTab tab text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">문의 리스트</button>
+  </div>
+
+  <!-- 접수 리스트 -->
+  <section id="repairsView">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <h1 class="text-lg font-bold">접수 리스트</h1>
       <select id="statusFilter" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
         <option value="all">전체 상태</option>
         <option value="대기중">대기중</option>
@@ -45,27 +62,46 @@
         <option value="완료">완료</option>
       </select>
     </div>
-  </div>
 
-  <div id="statsRow" class="grid grid-cols-3 gap-3 mb-6"></div>
+    <div id="statsRow" class="grid grid-cols-3 gap-3 mb-6"></div>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
-    <table class="w-full text-sm min-w-[700px]">
-      <thead class="bg-gray-50 text-gray-500 text-xs">
-        <tr>
-          <th class="text-left px-4 py-3">접수일시</th>
-          <th class="text-left px-4 py-3">이름</th>
-          <th class="text-left px-4 py-3">연락처</th>
-          <th class="text-left px-4 py-3">기기/모델</th>
-          <th class="text-left px-4 py-3">내용</th>
-          <th class="text-left px-4 py-3">사진</th>
-          <th class="text-left px-4 py-3">상태</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody" class="divide-y divide-gray-100"></tbody>
-    </table>
-  </div>
-  <p id="emptyMsg" class="text-center text-gray-400 text-sm py-10 hidden">접수 내역이 없습니다.</p>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+      <table class="w-full text-sm min-w-[700px]">
+        <thead class="bg-gray-50 text-gray-500 text-xs">
+          <tr>
+            <th class="text-left px-4 py-3">접수일시</th>
+            <th class="text-left px-4 py-3">이름</th>
+            <th class="text-left px-4 py-3">연락처</th>
+            <th class="text-left px-4 py-3">기기/모델</th>
+            <th class="text-left px-4 py-3">내용</th>
+            <th class="text-left px-4 py-3">사진</th>
+            <th class="text-left px-4 py-3">상태</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+    <p id="emptyMsg" class="text-center text-gray-400 text-sm py-10 hidden">접수 내역이 없습니다.</p>
+  </section>
+
+  <!-- 문의 리스트 -->
+  <section id="inquiriesView" class="hidden">
+    <h1 class="text-lg font-bold mb-6">문의 리스트</h1>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+      <table class="w-full text-sm min-w-[600px]">
+        <thead class="bg-gray-50 text-gray-500 text-xs">
+          <tr>
+            <th class="text-left px-4 py-3">문의일시</th>
+            <th class="text-left px-4 py-3">이름</th>
+            <th class="text-left px-4 py-3">연락처</th>
+            <th class="text-left px-4 py-3">문의 내용</th>
+          </tr>
+        </thead>
+        <tbody id="inquiryTableBody" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+    <p id="inquiryEmptyMsg" class="text-center text-gray-400 text-sm py-10 hidden">문의 내역이 없습니다.</p>
+  </section>
 </main>
 
 <script type="module">
@@ -82,8 +118,21 @@
   const statusFilter = document.getElementById('statusFilter');
   const statsRow = document.getElementById('statsRow');
   const emptyMsg = document.getElementById('emptyMsg');
+  const inquiryTableBody = document.getElementById('inquiryTableBody');
+  const inquiryEmptyMsg = document.getElementById('inquiryEmptyMsg');
 
   let allRepairs = [];
+  let allInquiries = [];
+
+  // 뷰 탭 전환
+  document.querySelectorAll('.viewTab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.viewTab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('repairsView').classList.toggle('hidden', tab.dataset.view !== 'repairs');
+      document.getElementById('inquiriesView').classList.toggle('hidden', tab.dataset.view !== 'inquiries');
+    });
+  });
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -104,6 +153,7 @@
       dashboardView.classList.remove('hidden');
       logoutBtn.classList.remove('hidden');
       subscribeRepairs();
+      subscribeInquiries();
     } else {
       loginView.classList.remove('hidden');
       dashboardView.classList.add('hidden');
@@ -115,13 +165,21 @@
     const q = query(collection(db, "repairs"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
       allRepairs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      render();
+      renderRepairs();
     });
   }
 
-  const statusColor = { '대기중': 'bg-yellow-100 text-yellow-700', '처리중': 'bg-blue-100 text-blue-700', '완료': 'bg-green-100 text-green-700' };
+  function subscribeInquiries() {
+    const q = query(collection(db, "inquiries"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snap) => {
+      allInquiries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderInquiries();
+    });
+  }
 
-  function render() {
+  const statusColor = { '대기중': 'bg-yellow-100 text-yellow-700', '처리중': 'bg-blue-100 text-blue-700', '완료': 'bg-[#eef3f1] text-[#1b3d37]' };
+
+  function renderRepairs() {
     const filter = statusFilter.value;
     const rows = filter === 'all' ? allRepairs : allRepairs.filter(r => r.status === filter);
 
@@ -161,7 +219,20 @@
     });
   }
 
-  statusFilter.addEventListener('change', render);
+  function renderInquiries() {
+    inquiryEmptyMsg.classList.toggle('hidden', allInquiries.length > 0);
+    inquiryTableBody.innerHTML = allInquiries.map(q => {
+      const date = q.createdAt?.toDate ? q.createdAt.toDate().toLocaleString('ko-KR') : '-';
+      return `<tr>
+        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${date}</td>
+        <td class="px-4 py-3">${q.name}</td>
+        <td class="px-4 py-3 whitespace-nowrap">${q.phone}</td>
+        <td class="px-4 py-3 max-w-[320px]">${q.message}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  statusFilter.addEventListener('change', renderRepairs);
 </script>
 </body>
 </html>

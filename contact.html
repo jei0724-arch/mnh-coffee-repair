@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>문의하기 - M&H 엠엔에이치</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; background:#f7f4ee; color:#1f2937; }
+  .spinner { border: 3px solid #e5e7eb; border-top-color: #1b3d37; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header class="bg-[#1b3d37] text-white sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm">M&H</span>
+      <span class="leading-tight">
+        <span class="block font-bold">엠엔에이치</span>
+        <span class="block text-[11px] text-white/60">커피 머신 전문 수리</span>
+      </span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/80">
+      <a href="index.html" class="hover:text-white">홈</a>
+      <a href="gallery.html" class="hover:text-white">수리 사례</a>
+      <a href="request.html" class="hover:text-white">수리 접수</a>
+      <a href="contact.html" class="text-white font-medium">문의하기</a>
+    </nav>
+    <a href="request.html" class="bg-white text-[#1b3d37] text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-100">수리 접수하기</a>
+  </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-6 py-14">
+  <h1 class="text-3xl font-extrabold mb-2">문의하기</h1>
+  <p class="text-gray-500 mb-8">수리 접수 전, 간단히 상담받고 싶으신 내용을 남겨주세요</p>
+
+  <form id="contactForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 space-y-6">
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-bold mb-1.5">이름 <span class="text-red-500">*</span></label>
+        <input type="text" name="name" required placeholder="홍길동"
+          class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+      </div>
+      <div>
+        <label class="block text-sm font-bold mb-1.5">연락처 <span class="text-red-500">*</span></label>
+        <input type="tel" name="phone" required placeholder="010-0000-0000" pattern="[0-9\-]+"
+          class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-bold mb-1.5">문의 내용 <span class="text-red-500">*</span></label>
+      <textarea name="message" required rows="5" placeholder="궁금하신 점을 자유롭게 남겨주세요"
+        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37] resize-none"></textarea>
+    </div>
+
+    <button type="submit" id="submitBtn"
+      class="w-full bg-[#1b3d37] hover:bg-[#16302b] text-white font-semibold py-3.5 rounded-full text-sm transition flex items-center justify-center gap-2">
+      <span id="submitText">문의 보내기</span>
+    </button>
+    <p id="formError" class="text-red-500 text-sm text-center hidden"></p>
+    <p id="formSuccess" class="text-[#1b3d37] text-sm text-center hidden">문의가 접수되었습니다. 빠르게 답변드릴게요.</p>
+  </form>
+</main>
+
+<footer class="text-center text-xs text-gray-400 pb-10">© 2026 M&H Coffee Repair. All rights reserved.</footer>
+
+<script type="module">
+  import { db } from "./firebase-config.js";
+  import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const form = document.getElementById('contactForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitText = document.getElementById('submitText');
+  const formError = document.getElementById('formError');
+  const formSuccess = document.getElementById('formSuccess');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError.classList.add('hidden');
+    formSuccess.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitText.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const data = Object.fromEntries(new FormData(form).entries());
+      await addDoc(collection(db, "inquiries"), {
+        name: data.name,
+        phone: data.phone,
+        message: data.message,
+        createdAt: serverTimestamp()
+      });
+      form.reset();
+      formSuccess.classList.remove('hidden');
+    } catch (err) {
+      console.error(err);
+      formError.textContent = '전송 중 오류가 발생했습니다. (' + err.message + ')';
+      formError.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitText.textContent = '문의 보내기';
+    }
+  });
+</script>
+</body>
+</html>

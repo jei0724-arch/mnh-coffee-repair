@@ -3,14 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>접수 완료 - M&H 커피머신 AS</title>
+<title>접수 완료 - M&H 엠엔에이치</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
+</style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-[#f7f4ee] text-gray-800">
 
-<header class="bg-white border-b border-gray-100">
-  <div class="max-w-3xl mx-auto px-5 py-4">
-    <a href="index.html" class="text-xl font-bold text-blue-600">M&H <span class="text-gray-800 font-medium">커피머신 AS</span></a>
+<header class="bg-[#1b3d37] text-white sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm">M&H</span>
+      <span class="leading-tight">
+        <span class="block font-bold">엠엔에이치</span>
+        <span class="block text-[11px] text-white/60">커피 머신 전문 수리</span>
+      </span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/80">
+      <a href="index.html" class="hover:text-white">홈</a>
+      <a href="gallery.html" class="hover:text-white">수리 사례</a>
+      <a href="request.html" class="hover:text-white">수리 접수</a>
+      <a href="contact.html" class="hover:text-white">문의하기</a>
+    </nav>
+    <a href="request.html" class="bg-white text-[#1b3d37] text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-100">수리 접수하기</a>
   </div>
 </header>
 
@@ -19,7 +35,7 @@
 
   <div id="content" class="hidden">
     <div class="text-center mb-8">
-      <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+      <div class="w-14 h-14 bg-[#eef3f1] text-[#1b3d37] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
       <h1 class="text-xl font-bold">접수가 완료되었습니다</h1>
       <p class="text-gray-500 text-sm mt-1">담당 엔지니어가 확인 후 순차적으로 연락드릴 예정입니다.</p>
     </div>
@@ -27,7 +43,7 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
       <div class="flex justify-between items-center pb-4 border-b border-gray-100">
         <span class="text-sm text-gray-400">접수 번호</span>
-        <span id="docId" class="font-mono text-sm font-semibold text-blue-600"></span>
+        <span id="docId" class="font-mono text-sm font-semibold text-[#1b3d37]"></span>
       </div>
       <div class="grid grid-cols-3 gap-2 text-sm">
         <span class="text-gray-400">신청자</span>
@@ -59,7 +75,7 @@
       </div>
     </div>
 
-    <a href="index.html" class="block text-center mt-8 text-sm text-blue-600 hover:underline">메인으로 돌아가기</a>
+    <a href="index.html" class="block text-center mt-8 text-sm text-[#1b3d37] hover:underline">메인으로 돌아가기</a>
   </div>
 
   <div id="notFound" class="hidden text-center text-gray-400 text-sm py-10">접수 내역을 찾을 수 없습니다.</div>

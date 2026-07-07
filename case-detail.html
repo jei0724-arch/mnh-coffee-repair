@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>수리 사례 상세 - M&H 엠엔에이치</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; background:#f7f4ee; color:#1f2937; }
+  .stripe { background-image: repeating-linear-gradient(45deg, #ded4bd 0, #ded4bd 2px, #e9e1d0 2px, #e9e1d0 14px); }
+  .stripe-after { background-image: repeating-linear-gradient(45deg, #cfe0da 0, #cfe0da 2px, #e2eee9 2px, #e2eee9 14px); }
+</style>
+</head>
+<body>
+
+<header class="bg-[#1b3d37] text-white sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm">M&H</span>
+      <span class="leading-tight">
+        <span class="block font-bold">엠엔에이치</span>
+        <span class="block text-[11px] text-white/60">커피 머신 전문 수리</span>
+      </span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/80">
+      <a href="index.html" class="hover:text-white">홈</a>
+      <a href="gallery.html" class="text-white font-medium">수리 사례</a>
+      <a href="request.html" class="hover:text-white">수리 접수</a>
+      <a href="contact.html" class="hover:text-white">문의하기</a>
+    </nav>
+    <a href="request.html" class="bg-white text-[#1b3d37] text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-100">수리 접수하기</a>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-6 py-14">
+  <a href="gallery.html" class="text-sm text-gray-500 hover:text-gray-700">← 목록으로</a>
+
+  <div class="mt-6">
+    <span id="tag" class="text-xs text-gray-400"></span>
+    <h1 id="title" class="text-2xl font-extrabold mt-1"></h1>
+    <p id="meta" class="text-sm text-gray-400 mt-1"></p>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4 mt-8">
+    <div class="stripe rounded-2xl aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">고장 전 사진</div>
+    <div class="stripe-after rounded-2xl aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">수리 후 사진</div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 p-6 mt-8">
+    <h2 class="font-bold mb-3">수리 내용</h2>
+    <p id="desc" class="text-sm text-gray-600 leading-relaxed"></p>
+  </div>
+</main>
+
+<footer class="text-center text-xs text-gray-400 pb-10">© 2026 M&H Coffee Repair. All rights reserved.</footer>
+
+<script>
+  const cases = {
+    1: { title: '펌프 소음 및 압력 저하 수리', tag: '가정용 전자동 머신', meta: '2026.06.02 · 방문진단 1일 · 수리 1일',
+      desc: '보일러 펌프에서 소음이 발생하고 추출 압력이 저하되는 증상으로 접수되었습니다. 펌프 진동 흡수 패드 노후화 및 스케일 축적이 원인으로 확인되어 펌프 교체 및 내부 스케일 제거 작업을 진행했습니다.' },
+    2: { title: '그룹헤드 누수 수리', tag: '상업용 그룹헤드 머신', meta: '2026.05.20 · 방문진단 1일 · 수리 1일',
+      desc: '추출 시 그룹헤드 개스킷 부위에서 누수가 발생하는 증상으로 접수되었습니다. 개스킷 및 샤워스크린 교체 후 정상 작동 확인했습니다.' },
+    3: { title: '캡슐 인식 오류 수리', tag: '캡슐 커피머신', meta: '2026.05.11 · 방문진단 1일 · 수리 1일',
+      desc: '캡슐을 인식하지 못하고 에러 코드가 표시되는 증상으로 접수되었습니다. 센서 오염 및 배선 접촉 불량이 원인으로 확인되어 센서 세척 및 배선 재정비를 진행했습니다.' },
+  };
+
+  const id = new URLSearchParams(location.search).get('id') || 1;
+  const c = cases[id] || cases[1];
+  document.getElementById('tag').textContent = c.tag;
+  document.getElementById('title').textContent = c.title;
+  document.getElementById('meta').textContent = c.meta;
+  document.getElementById('desc').textContent = c.desc;
+</script>
+</body>
+</html>

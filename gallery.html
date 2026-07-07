@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>수리 사례 갤러리 - M&H 엠엔에이치</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; background:#f7f4ee; color:#1f2937; }
+  .stripe { background-image: repeating-linear-gradient(45deg, #ded4bd 0, #ded4bd 2px, #e9e1d0 2px, #e9e1d0 14px); }
+  .tab.active { background:#1b3d37; color:#fff; }
+</style>
+</head>
+<body>
+
+<header class="bg-[#1b3d37] text-white sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <span class="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm">M&H</span>
+      <span class="leading-tight">
+        <span class="block font-bold">엠엔에이치</span>
+        <span class="block text-[11px] text-white/60">커피 머신 전문 수리</span>
+      </span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/80">
+      <a href="index.html" class="hover:text-white">홈</a>
+      <a href="gallery.html" class="text-white font-medium">수리 사례</a>
+      <a href="request.html" class="hover:text-white">수리 접수</a>
+      <a href="contact.html" class="hover:text-white">문의하기</a>
+    </nav>
+    <a href="request.html" class="bg-white text-[#1b3d37] text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-100">수리 접수하기</a>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-14">
+  <h1 class="text-3xl font-extrabold mb-2">수리 사례 갤러리</h1>
+  <p class="text-gray-500 mb-8">실제 진행한 수리 건들을 Before / After 사진과 함께 소개합니다</p>
+
+  <div class="flex flex-wrap gap-2 mb-8" id="tabs">
+    <button data-cat="all" class="tab active text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">전체</button>
+    <button data-cat="home" class="tab text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">가정용 전자동 머신</button>
+    <button data-cat="commercial" class="tab text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">상업용 그룹헤드 머신</button>
+    <button data-cat="capsule" class="tab text-sm font-medium px-4 py-2 rounded-full bg-white border border-gray-200">캡슐 커피머신</button>
+  </div>
+
+  <div id="cards" class="grid md:grid-cols-3 gap-6"></div>
+</main>
+
+<footer class="text-center text-xs text-gray-400 pb-10">© 2026 M&H Coffee Repair. All rights reserved.</footer>
+
+<script>
+  const cases = [
+    { id: 1, cat: 'home', title: '펌프 소음 및 압력 저하 수리', date: '2026.06.02', tag: '가정용 전자동 머신' },
+    { id: 2, cat: 'commercial', title: '그룹헤드 누수 수리', date: '2026.05.20', tag: '상업용 그룹헤드 머신' },
+    { id: 3, cat: 'capsule', title: '캡슐 인식 오류 수리', date: '2026.05.11', tag: '캡슐 커피머신' },
+  ];
+
+  const cardsEl = document.getElementById('cards');
+  const tabs = document.querySelectorAll('.tab');
+
+  function render(cat) {
+    const list = cat === 'all' ? cases : cases.filter(c => c.cat === cat);
+    cardsEl.innerHTML = list.map(c => `
+      <a href="case-detail.html?id=${c.id}" class="block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition">
+        <div class="stripe aspect-[4/3] flex items-center justify-center text-gray-400 text-sm">Before / After 사진</div>
+        <div class="p-4">
+          <span class="text-xs text-gray-400">${c.tag}</span>
+          <h3 class="font-bold mt-1">${c.title}</h3>
+          <span class="text-xs text-gray-400">${c.date}</span>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      render(tab.dataset.cat);
+    });
+  });
+
+  render('all');
+</script>
+</body>
+</html>
