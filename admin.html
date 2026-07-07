@@ -108,7 +108,7 @@
 
   <!-- 수리 사례 관리 -->
   <section id="casesView" class="hidden">
-    <h1 class="text-lg font-bold mb-6">수리 사례 등록</h1>
+    <h1 id="caseFormTitle" class="text-lg font-bold mb-6">수리 사례 등록</h1>
 
     <form id="caseForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5 mb-10">
       <div class="grid md:grid-cols-2 gap-5">
@@ -135,20 +135,23 @@
 
       <div class="grid md:grid-cols-2 gap-5">
         <div>
-          <label class="block text-sm font-bold mb-1.5">고장 전 사진</label>
+          <label class="block text-sm font-bold mb-1.5">고장 전 사진 <span class="text-gray-400 font-normal">(수정 시 비워두면 기존 사진 유지)</span></label>
           <input type="file" name="beforePhoto" accept="image/*"
             class="w-full text-sm border border-dashed border-gray-300 rounded-lg px-3.5 py-2.5 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-[#eef3f1] file:text-[#1b3d37] file:text-sm">
         </div>
         <div>
-          <label class="block text-sm font-bold mb-1.5">수리 후 사진</label>
+          <label class="block text-sm font-bold mb-1.5">수리 후 사진 <span class="text-gray-400 font-normal">(수정 시 비워두면 기존 사진 유지)</span></label>
           <input type="file" name="afterPhoto" accept="image/*"
             class="w-full text-sm border border-dashed border-gray-300 rounded-lg px-3.5 py-2.5 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-[#eef3f1] file:text-[#1b3d37] file:text-sm">
         </div>
       </div>
 
-      <button type="submit" id="caseSubmitBtn" class="bg-[#1b3d37] hover:bg-[#16302b] text-white font-semibold px-6 py-3 rounded-full text-sm">
-        <span id="caseSubmitText">사례 등록</span>
-      </button>
+      <div class="flex items-center gap-3">
+        <button type="submit" id="caseSubmitBtn" class="bg-[#1b3d37] hover:bg-[#16302b] text-white font-semibold px-6 py-3 rounded-full text-sm">
+          <span id="caseSubmitText">사례 등록</span>
+        </button>
+        <button type="button" id="caseCancelBtn" class="hidden text-sm text-gray-500 hover:text-gray-700">취소</button>
+      </div>
       <p id="caseError" class="text-red-500 text-sm hidden"></p>
     </form>
 
@@ -181,10 +184,13 @@
   const caseError = document.getElementById('caseError');
   const caseList = document.getElementById('caseList');
   const caseEmptyMsg = document.getElementById('caseEmptyMsg');
+  const caseFormTitle = document.getElementById('caseFormTitle');
+  const caseCancelBtn = document.getElementById('caseCancelBtn');
 
   let allRepairs = [];
   let allInquiries = [];
   let allCases = [];
+  let editingCaseId = null;
 
   // 뷰 탭 전환
   document.querySelectorAll('.viewTab').forEach(tab => {
@@ -320,7 +326,10 @@
         <div class="p-4">
           <span class="text-xs text-gray-400">${categoryLabel[c.category] || c.category}</span>
           <h3 class="font-bold text-sm mt-1">${c.title}</h3>
-          <button data-id="${c.id}" class="deleteCaseBtn text-xs text-red-500 hover:underline mt-3">삭제</button>
+          <div class="flex gap-3 mt-3">
+            <button data-id="${c.id}" class="editCaseBtn text-xs text-[#1b3d37] hover:underline">수정</button>
+            <button data-id="${c.id}" class="deleteCaseBtn text-xs text-red-500 hover:underline">삭제</button>
+          </div>
         </div>
       </div>
     `).join('');
@@ -329,9 +338,39 @@
       btn.addEventListener('click', async () => {
         if (!confirm('이 사례를 삭제할까요?')) return;
         await deleteDoc(doc(db, "cases", btn.dataset.id));
+        if (editingCaseId === btn.dataset.id) resetCaseForm();
       });
     });
+
+    document.querySelectorAll('.editCaseBtn').forEach(btn => {
+      btn.addEventListener('click', () => startEditCase(btn.dataset.id));
+    });
   }
+
+  function startEditCase(id) {
+    const c = allCases.find(x => x.id === id);
+    if (!c) return;
+    editingCaseId = id;
+    caseForm.title.value = c.title || '';
+    caseForm.category.value = c.category || 'home';
+    caseForm.description.value = c.description || '';
+    caseForm.beforePhoto.value = '';
+    caseForm.afterPhoto.value = '';
+    caseFormTitle.textContent = '수리 사례 수정';
+    caseSubmitText.textContent = '수정 완료';
+    caseCancelBtn.classList.remove('hidden');
+    caseForm.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetCaseForm() {
+    editingCaseId = null;
+    caseForm.reset();
+    caseFormTitle.textContent = '수리 사례 등록';
+    caseSubmitText.textContent = '사례 등록';
+    caseCancelBtn.classList.add('hidden');
+  }
+
+  caseCancelBtn.addEventListener('click', resetCaseForm);
 
   caseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -344,7 +383,7 @@
       const beforeFile = caseForm.beforePhoto.files[0];
       const afterFile = caseForm.afterPhoto.files[0];
 
-      let beforeURL = '', afterURL = '';
+      let beforeURL, afterURL;
       if (beforeFile) {
         const r = ref(storage, `cases/${Date.now()}_before_${beforeFile.name}`);
         await uploadBytes(r, beforeFile);
@@ -356,23 +395,34 @@
         afterURL = await getDownloadURL(r);
       }
 
-      await addDoc(collection(db, "cases"), {
-        title: data.title,
-        category: data.category,
-        description: data.description,
-        beforeURL,
-        afterURL,
-        createdAt: serverTimestamp()
-      });
+      if (editingCaseId) {
+        const update = {
+          title: data.title,
+          category: data.category,
+          description: data.description,
+        };
+        if (beforeURL !== undefined) update.beforeURL = beforeURL;
+        if (afterURL !== undefined) update.afterURL = afterURL;
+        await updateDoc(doc(db, "cases", editingCaseId), update);
+      } else {
+        await addDoc(collection(db, "cases"), {
+          title: data.title,
+          category: data.category,
+          description: data.description,
+          beforeURL: beforeURL || '',
+          afterURL: afterURL || '',
+          createdAt: serverTimestamp()
+        });
+      }
 
-      caseForm.reset();
+      resetCaseForm();
     } catch (err) {
       console.error(err);
-      caseError.textContent = '등록 중 오류가 발생했습니다. (' + err.message + ')';
+      caseError.textContent = (editingCaseId ? '수정' : '등록') + ' 중 오류가 발생했습니다. (' + err.message + ')';
       caseError.classList.remove('hidden');
     } finally {
       caseSubmitBtn.disabled = false;
-      caseSubmitText.textContent = '사례 등록';
+      caseSubmitText.textContent = editingCaseId ? '수정 완료' : '사례 등록';
     }
   });
 </script>
