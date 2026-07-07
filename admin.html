@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - M&H 커피머신 AS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<header class="bg-white border-b border-gray-100">
+  <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between">
+    <a href="index.html" class="text-xl font-bold text-blue-600">M&H <span class="text-gray-800 font-medium">관리자</span></a>
+    <button id="logoutBtn" class="text-sm text-gray-400 hover:text-gray-600 hidden">로그아웃</button>
+  </div>
+</header>
+
+<!-- 로그인 화면 -->
+<div id="loginView" class="max-w-sm mx-auto mt-20 px-5">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <h1 class="text-lg font-bold mb-6 text-center">관리자 로그인</h1>
+    <form id="loginForm" class="space-y-3">
+      <input type="email" id="email" required placeholder="이메일"
+        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <input type="password" id="password" required placeholder="비밀번호"
+        class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm">로그인</button>
+      <p id="loginError" class="text-red-500 text-xs text-center hidden"></p>
+    </form>
+    <p class="text-xs text-gray-400 mt-4 text-center">
+      Firebase 콘솔 &gt; Authentication &gt; 사용자 추가에서<br>관리자 계정을 먼저 만들어 주세요.
+    </p>
+  </div>
+</div>
+
+<!-- 대시보드 -->
+<main id="dashboardView" class="max-w-6xl mx-auto px-5 py-8 hidden">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <h1 class="text-lg font-bold">접수 리스트</h1>
+    <div class="flex gap-2">
+      <select id="statusFilter" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+        <option value="all">전체 상태</option>
+        <option value="대기중">대기중</option>
+        <option value="처리중">처리중</option>
+        <option value="완료">완료</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="statsRow" class="grid grid-cols-3 gap-3 mb-6"></div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+    <table class="w-full text-sm min-w-[700px]">
+      <thead class="bg-gray-50 text-gray-500 text-xs">
+        <tr>
+          <th class="text-left px-4 py-3">접수일시</th>
+          <th class="text-left px-4 py-3">이름</th>
+          <th class="text-left px-4 py-3">연락처</th>
+          <th class="text-left px-4 py-3">기기/모델</th>
+          <th class="text-left px-4 py-3">내용</th>
+          <th class="text-left px-4 py-3">사진</th>
+          <th class="text-left px-4 py-3">상태</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody" class="divide-y divide-gray-100"></tbody>
+    </table>
+  </div>
+  <p id="emptyMsg" class="text-center text-gray-400 text-sm py-10 hidden">접수 내역이 없습니다.</p>
+</main>
+
+<script type="module">
+  import { db, auth } from "./firebase-config.js";
+  import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const loginView = document.getElementById('loginView');
+  const dashboardView = document.getElementById('dashboardView');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const loginForm = document.getElementById('loginForm');
+  const loginError = document.getElementById('loginError');
+  const tableBody = document.getElementById('tableBody');
+  const statusFilter = document.getElementById('statusFilter');
+  const statsRow = document.getElementById('statsRow');
+  const emptyMsg = document.getElementById('emptyMsg');
+
+  let allRepairs = [];
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.classList.add('hidden');
+    try {
+      await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+    } catch (err) {
+      loginError.textContent = '로그인 실패: ' + err.message;
+      loginError.classList.remove('hidden');
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loginView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      subscribeRepairs();
+    } else {
+      loginView.classList.remove('hidden');
+      dashboardView.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+    }
+  });
+
+  function subscribeRepairs() {
+    const q = query(collection(db, "repairs"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snap) => {
+      allRepairs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      render();
+    });
+  }
+
+  const statusColor = { '대기중': 'bg-yellow-100 text-yellow-700', '처리중': 'bg-blue-100 text-blue-700', '완료': 'bg-green-100 text-green-700' };
+
+  function render() {
+    const filter = statusFilter.value;
+    const rows = filter === 'all' ? allRepairs : allRepairs.filter(r => r.status === filter);
+
+    statsRow.innerHTML = ['대기중', '처리중', '완료'].map(s => {
+      const count = allRepairs.filter(r => r.status === s).length;
+      return `<div class="bg-white rounded-xl border border-gray-100 p-4 text-center">
+        <div class="text-2xl font-bold">${count}</div>
+        <div class="text-xs text-gray-400 mt-1">${s}</div>
+      </div>`;
+    }).join('');
+
+    emptyMsg.classList.toggle('hidden', rows.length > 0);
+    tableBody.innerHTML = rows.map(r => {
+      const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString('ko-KR') : '-';
+      const photos = (r.photoURLs || []).map(url => `<a href="${url}" target="_blank" class="inline-block"><img src="${url}" class="w-8 h-8 rounded object-cover inline-block mr-1"></a>`).join('') || '-';
+      return `<tr>
+        <td class="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">${date}</td>
+        <td class="px-4 py-3">${r.customerName}</td>
+        <td class="px-4 py-3 whitespace-nowrap">${r.phone}</td>
+        <td class="px-4 py-3">${r.deviceType}${r.modelName ? ' / ' + r.modelName : ''}</td>
+        <td class="px-4 py-3 max-w-[220px] truncate" title="${r.description}">${r.description}</td>
+        <td class="px-4 py-3">${photos}</td>
+        <td class="px-4 py-3">
+          <select data-id="${r.id}" class="statusSelect text-xs rounded-full px-2 py-1 border-0 ${statusColor[r.status] || 'bg-gray-100'}">
+            <option ${r.status === '대기중' ? 'selected' : ''}>대기중</option>
+            <option ${r.status === '처리중' ? 'selected' : ''}>처리중</option>
+            <option ${r.status === '완료' ? 'selected' : ''}>완료</option>
+          </select>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.querySelectorAll('.statusSelect').forEach(sel => {
+      sel.addEventListener('change', async (e) => {
+        await updateDoc(doc(db, "repairs", e.target.dataset.id), { status: e.target.value });
+      });
+    });
+  }
+
+  statusFilter.addEventListener('change', render);
+</script>
+</body>
+</html>
