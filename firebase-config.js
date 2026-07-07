@@ -8,12 +8,12 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyACGgXY2fiZtdVg9ebcUsFrSjwK7Yv_sC4",
+  authDomain: "mnh-coffee-repair.firebaseapp.com",
+  projectId: "mnh-coffee-repair",
+  storageBucket: "mnh-coffee-repair.firebasestorage.app",
+  messagingSenderId: "78404702948",
+  appId: "1:78404702948:web:a737889cd4dc1878d452f1"
 };
 
 const app = initializeApp(firebaseConfig);
