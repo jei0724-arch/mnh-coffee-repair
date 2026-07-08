@@ -1,0 +1,37 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" fill="#fdf6ee"/>
+  <rect x="88" y="68" width="848" height="888" rx="70" fill="none" stroke="#e8720c" stroke-width="26"/>
+
+  <!-- coffee machine body -->
+  <g fill="none" stroke="#e8720c" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="240" y="128" width="460" height="120" rx="16"/>
+    <circle cx="628" cy="188" r="18" fill="#e8720c" stroke="none"/>
+
+    <path d="M340 248 v40 h60 v-40" />
+    <path d="M400 288 q0 30 -20 40" />
+
+    <rect x="240" y="248" width="70" height="270" rx="0"/>
+    <rect x="630" y="248" width="70" height="270" rx="0"/>
+
+    <rect x="240" y="480" width="460" height="60" rx="10"/>
+
+    <!-- cup -->
+    <path d="M330 400 h130 v70 a65 65 0 0 1 -130 0 z"/>
+    <path d="M460 415 h30 a25 25 0 0 1 0 50 h-30" />
+
+    <!-- wrench -->
+    <path d="M700 340
+             l-150 150
+             a34 34 0 0 0 48 48
+             l150 -150
+             a70 70 0 0 0 -30 -90
+             q-10 40 -55 60
+             q-45 -20 -25 -60
+             q-40 8 -60 42 z" fill="#e8720c" stroke="none"/>
+  </g>
+
+  <!-- text -->
+  <text x="512" y="700" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="92" fill="#e8720c" letter-spacing="2">COFFEE</text>
+  <text x="512" y="800" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="92" fill="#e8720c" letter-spacing="2">MACHINE</text>
+  <text x="512" y="900" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="92" fill="#e8720c" letter-spacing="2">REPAIR</text>
+</svg>
