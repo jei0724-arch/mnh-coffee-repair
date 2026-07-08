@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jei0724-arch.github.io/mnh-coffee-repair/sitemap.xml
