@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>접수 조회 - M&H 엠엔에이치</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; background:#f7f4ee; color:#1f2937; }
+  .spinner { border: 3px solid #e5e7eb; border-top-color: #1b3d37; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header class="bg-[#1b3d37] text-white sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <img src="logo.jpg" alt="M&H 커피머신 수리 로고" class="w-9 h-9 rounded-lg object-cover">
+      <span class="leading-tight">
+        <span class="block font-bold">엠엔에이치</span>
+        <span class="block text-[11px] text-white/60">커피 머신 전문 수리</span>
+      </span>
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/80">
+      <a href="index.html" class="hover:text-white">홈</a>
+      <a href="gallery.html" class="hover:text-white">수리 사례</a>
+      <a href="request.html" class="hover:text-white">수리 접수</a>
+      <a href="track.html" class="text-white font-medium">접수 조회</a>
+      <a href="contact.html" class="hover:text-white">문의하기</a>
+    </nav>
+    <a href="request.html" class="bg-white text-[#1b3d37] text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-gray-100">수리 접수하기</a>
+  </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-6 py-14">
+  <h1 class="text-3xl font-extrabold mb-2">접수 조회</h1>
+  <p class="text-gray-500 mb-8">접수하신 이름과 연락처를 입력하면 진행 상태를 확인하실 수 있습니다</p>
+
+  <form id="trackForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 space-y-5 mb-10">
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-bold mb-1.5">이름 <span class="text-red-500">*</span></label>
+        <input type="text" name="customerName" required placeholder="홍길동"
+          class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+      </div>
+      <div>
+        <label class="block text-sm font-bold mb-1.5">연락처 <span class="text-red-500">*</span></label>
+        <input type="tel" name="phone" required placeholder="010-0000-0000" pattern="[0-9\-]+"
+          class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37]">
+      </div>
+    </div>
+    <button type="submit" id="trackSubmitBtn" class="w-full bg-[#1b3d37] hover:bg-[#16302b] text-white font-semibold py-3.5 rounded-full text-sm transition flex items-center justify-center gap-2">
+      <span id="trackSubmitText">조회하기</span>
+    </button>
+    <p id="trackError" class="text-red-500 text-sm text-center hidden"></p>
+  </form>
+
+  <div id="resultList" class="space-y-4"></div>
+  <p id="emptyMsg" class="hidden text-center text-gray-400 text-sm py-10">일치하는 접수 내역이 없습니다. 이름과 연락처를 다시 확인해 주세요.</p>
+</main>
+
+<footer class="text-center text-xs text-gray-400 pb-10">© 2026 M&H Coffee Repair. All rights reserved. · <a href="https://blog.naver.com/mnh2311" target="_blank" rel="noopener" class="hover:text-gray-500">블로그</a> · <a href="admin.html" class="hover:text-gray-500">관리자</a></footer>
+
+<script type="module">
+  import { db } from "./firebase-config.js";
+  import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const form = document.getElementById('trackForm');
+  const submitBtn = document.getElementById('trackSubmitBtn');
+  const submitText = document.getElementById('trackSubmitText');
+  const trackError = document.getElementById('trackError');
+  const resultList = document.getElementById('resultList');
+  const emptyMsg = document.getElementById('emptyMsg');
+
+  const statusColor = { '대기중': 'bg-yellow-100 text-yellow-700', '처리중': 'bg-blue-100 text-blue-700', '완료': 'bg-[#eef3f1] text-[#1b3d37]' };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    trackError.classList.add('hidden');
+    emptyMsg.classList.add('hidden');
+    resultList.innerHTML = '';
+    submitBtn.disabled = true;
+    submitText.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const data = Object.fromEntries(new FormData(form).entries());
+      const q = query(collection(db, "repairs"), where("phone", "==", data.phone));
+      const snap = await getDocs(q);
+
+      const matches = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.customerName === data.customerName);
+
+      matches.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+      if (!matches.length) {
+        emptyMsg.classList.remove('hidden');
+      } else {
+        resultList.innerHTML = matches.map(r => {
+          const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString('ko-KR') : '-';
+          return `
+          <div class="bg-white rounded-2xl border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-gray-400">${date}</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full ${statusColor[r.status] || 'bg-gray-100'}">${r.status || '대기중'}</span>
+            </div>
+            <h3 class="font-bold mb-1">${r.deviceType}${r.modelName ? ' / ' + r.modelName : ''}</h3>
+            <p class="text-sm text-gray-500 whitespace-pre-wrap">${r.description}</p>
+          </div>`;
+        }).join('');
+      }
+    } catch (err) {
+      console.error(err);
+      trackError.textContent = '조회 중 오류가 발생했습니다. (' + err.message + ')';
+      trackError.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitText.textContent = '조회하기';
+    }
+  });
+</script>
+</body>
+</html>
