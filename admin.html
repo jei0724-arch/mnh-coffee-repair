@@ -307,6 +307,34 @@
   // ── 수리 사례 관리 ──
   const categoryLabel = { home: '가정용 전자동 머신', commercial: '상업용 그룹헤드 머신', capsule: '캡슐 커피머신' };
 
+  // 스마트폰 원본 사진(수 MB)은 업로드가 느리거나 실패할 수 있어 업로드 전 리사이즈/압축
+  function compressImage(file, maxDim = 1600, quality = 0.82) {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) return resolve(file);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) return resolve(file);
+          resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  }
+
   function subscribeCases() {
     const q = query(collection(db, "cases"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
@@ -385,13 +413,15 @@
 
       let beforeURL, afterURL;
       if (beforeFile) {
-        const r = ref(storage, `cases/${Date.now()}_before_${beforeFile.name}`);
-        await uploadBytes(r, beforeFile);
+        const compressed = await compressImage(beforeFile);
+        const r = ref(storage, `cases/${Date.now()}_before_${compressed.name}`);
+        await uploadBytes(r, compressed);
         beforeURL = await getDownloadURL(r);
       }
       if (afterFile) {
-        const r = ref(storage, `cases/${Date.now()}_after_${afterFile.name}`);
-        await uploadBytes(r, afterFile);
+        const compressed = await compressImage(afterFile);
+        const r = ref(storage, `cases/${Date.now()}_after_${compressed.name}`);
+        await uploadBytes(r, compressed);
         afterURL = await getDownloadURL(r);
       }
 

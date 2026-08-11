@@ -126,6 +126,34 @@
   const submitText = document.getElementById('submitText');
   const formError = document.getElementById('formError');
 
+  // 스마트폰 원본 사진(수 MB)은 업로드가 느리거나 실패할 수 있어 업로드 전 리사이즈/압축
+  function compressImage(file, maxDim = 1600, quality = 0.82) {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) return resolve(file);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) return resolve(file);
+          resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  }
+
   photoInput.addEventListener('change', () => {
     photoPreview.innerHTML = '';
     const files = Array.from(photoInput.files).slice(0, 3);
@@ -150,9 +178,10 @@
       const files = Array.from(photoInput.files).slice(0, 3);
       const photoURLs = [];
       for (const file of files) {
-        const path = `repairs/${Date.now()}_${file.name}`;
+        const compressed = await compressImage(file);
+        const path = `repairs/${Date.now()}_${compressed.name}`;
         const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
+        await uploadBytes(storageRef, compressed);
         const url = await getDownloadURL(storageRef);
         photoURLs.push(url);
       }
