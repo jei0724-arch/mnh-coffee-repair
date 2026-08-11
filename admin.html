@@ -128,9 +128,15 @@
       </div>
 
       <div>
-        <label class="block text-sm font-bold mb-1.5">수리 내용 <span class="text-red-500">*</span></label>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-sm font-bold">수리 내용 <span class="text-red-500">*</span></label>
+          <button type="button" id="aiGenerateBtn" class="text-xs font-semibold text-[#1b3d37] border border-[#1b3d37]/30 rounded-full px-3 py-1 hover:bg-[#eef3f1] disabled:opacity-40 disabled:cursor-not-allowed">
+            <span id="aiGenerateText">✨ AI로 자동 작성</span>
+          </button>
+        </div>
         <textarea name="description" required rows="4" placeholder="증상과 수리 내용을 적어주세요"
           class="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1b3d37] resize-none"></textarea>
+        <p id="aiError" class="text-red-500 text-xs mt-1 hidden"></p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-5">
@@ -399,6 +405,44 @@
   }
 
   caseCancelBtn.addEventListener('click', resetCaseForm);
+
+  const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+  const aiGenerateText = document.getElementById('aiGenerateText');
+  const aiError = document.getElementById('aiError');
+
+  aiGenerateBtn.addEventListener('click', async () => {
+    const title = caseForm.title.value.trim();
+    aiError.classList.add('hidden');
+
+    if (!title) {
+      aiError.textContent = '제목을 먼저 입력해주세요.';
+      aiError.classList.remove('hidden');
+      return;
+    }
+    if (caseForm.description.value.trim() && !confirm('작성된 내용이 있습니다. AI가 작성한 내용으로 덮어쓸까요?')) {
+      return;
+    }
+
+    aiGenerateBtn.disabled = true;
+    aiGenerateText.textContent = '작성 중...';
+
+    try {
+      const res = await fetch('/api/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, category: caseForm.category.value }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '생성 중 오류가 발생했습니다.');
+      caseForm.description.value = data.description;
+    } catch (err) {
+      aiError.textContent = err.message;
+      aiError.classList.remove('hidden');
+    } finally {
+      aiGenerateBtn.disabled = false;
+      aiGenerateText.textContent = '✨ AI로 자동 작성';
+    }
+  });
 
   caseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
